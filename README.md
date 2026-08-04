@@ -13,17 +13,7 @@ If you'd like to support my work, I accept crypto donation. No pressure at all
 
 **Solana (SOL / USDC-SPL) — Solana network only:**
 ```
-45LV4vCm1FfAeEvLR3aiy8WA3GuiQTkUKQ9rKUpjcCA5
-```
-
-**Bitcoin (Taproot):**
-```
-bc1pcvyfehw8m77zl02d2jg6pswmrh7t54u59qnefkz6h5mmahdgpwdq8ja9xz
-```
-
-**Ethereum (ETH / ERC-20 tokens):**
-```
-0x2a2eaa55f86adcf3a95b354fcd38860de7d92af9
+He6qNwDcJoMRD3prYpaZVq6ZiVeWKkALMGKvFRHgjL1k
 ```
 
 </details>
