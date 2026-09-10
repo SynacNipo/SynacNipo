@@ -25,6 +25,17 @@
     border: 3px solid #0ff; background: rgba(0,255,255,0.12);
     box-shadow: inset 0 0 30px rgba(0,255,255,0.35);
   }
+  #cube .f1 { transform: translateZ(60px); }
+  #cube .f2 { transform: rotateY(180deg) translateZ(60px); }
+  #cube .f3 { transform: rotateY(90deg) translateZ(60px); }
+  #cube .f4 { transform: rotateY(-90deg) translateZ(60px); }
+  #cube .f5 { transform: rotateX(90deg) translateZ(60px); }
+  #cube .f6 { transform: rotateX(-90deg) translateZ(60px); }
+  #fade {
+    position: fixed; inset: 0; background: #000; opacity: 0;
+    pointer-events: none; z-index: 30; transition: opacity 0.8s;
+  }
+  #fade.on { opacity: 1; }
   #flash {
     position: fixed; inset: 0; background: #fff; opacity: 0;
     pointer-events: none; z-index: 8;
@@ -81,9 +92,10 @@
 </head>
 <body>
 <canvas id="cv"></canvas>
-<div id="count">10</div>
+<div id="count">3</div>
 <div id="boxwrap"><div id="cube">
-  <div class="face"></div>
+  <div class="face f1"></div><div class="face f2"></div><div class="face f3"></div>
+  <div class="face f4"></div><div class="face f5"></div><div class="face f6"></div>
 </div></div>
 <div id="flash"></div>
 <div id="scan"></div>
@@ -92,29 +104,33 @@
 <div id="sorry">sorry about that — you're forgiven. dashboard incoming.</div>
 <div id="topbar">forgiven in <span id="topnum">20</span>s</div>
 <div id="dash"></div>
+<div id="fade"></div>
 
 <script>
-// ---------- word source (crypto / cracked mentions filtered out) ----------
-const FALLBACK = `My Work I use opencode https://www.opencode.ai for many of my projects It helps but I usually fine-tune everything myself and make sure I understand what I'm building I try to avoid low-effort AI-generated content  Contact Discord synacni Or message me directly https://discord.com/users/1459512144377679952 Note It may take a few moments for the Discord profile to load`;
-const BLOCK_LINE = /cracked|afford|MYR|inexpensive|official copy|crypto|donation|support me|solana|USDC|SPL|He6q|network only|No pressure/i;
-const BLOCK_WORD = /^(cracked|afford|crypto|donation|solana|USDC|SPL|MYR|116|He6q.*)$/i;
+// ---------- word source: random wikipedia summaries (never README — no personal links) ----------
+const FALLBACK = `orbit canvas particle glitch static signal circuit pixel vector frequency modulation echo sensor array bandwidth cipher drift ember flux gravity halo ion jet kernel lunar mist nebula north ocean prism quark radar solar tide urban vapor wave xenon yield zinc`;
+const BLOCK_TOKEN = /https?|:\/\/|discord|opencode|\d{4,}|He6q/i;
 function cleanText(text) {
-  return text.split('\n').filter(l => !BLOCK_LINE.test(l)).join('\n')
-    .replace(/[#*`<>]/g, ' ').split(/\s+/).filter(w => w && !BLOCK_WORD.test(w) && !/He6q/.test(w));
+  return text.replace(/[#*`<>]/g, ' ').split(/\s+/)
+    .map(w => w.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, ''))
+    .filter(w => w && w.length > 1 && w.length < 16 && !BLOCK_TOKEN.test(w));
 }
 let words = [];
 async function loadWords() {
   try {
-    const res = await fetch('README.md');
-    words = cleanText(res.ok ? await res.text() : FALLBACK);
-  } catch { words = FALLBACK.split(/\s+/); }
+    const reqs = [1, 2, 3, 4].map(() =>
+      fetch('https://en.wikipedia.org/api/rest_v1/page/random/summary')
+        .then(r => r.ok ? r.json() : null).catch(() => null));
+    const pages = (await Promise.all(reqs)).filter(Boolean);
+    words = cleanText(pages.map(p => p.extract || '').join('\n'));
+  } catch { words = []; }
   if (!words.length) words = cleanText(FALLBACK);
 }
 
 // ---------- canvas setup (capped DPR = no lag) ----------
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
-const DPR = Math.min(devicePixelRatio || 1, 1.25);
+const DPR = Math.min(devicePixelRatio || 1, 1);
 function fit() {
   cv.width = Math.floor(innerWidth * DPR);
   cv.height = Math.floor(innerHeight * DPR);
@@ -138,12 +154,12 @@ function pickReadme() {
 }
 
 // ---------- particles: hard-capped, no shadowBlur, no rotation ----------
-const MAX = 320;
+const MAX = 140;
 const parts = [];
 function spawnOne() {
   if (parts.length >= MAX) parts.shift(); // recycle oldest, never grow DOM/canvas cost
   const a = Math.random() * Math.PI * 2;
-  const sp = 1 + Math.random() * 3.5;
+  const sp = 0.4 + Math.random() * 1.4;
   const readme = Math.random() < 0.6;
   const text = readme ? pickReadme() : garble(3 + ((Math.random() * 9) | 0));
   parts.push({
@@ -151,12 +167,17 @@ function spawnOne() {
     y: innerHeight / 2 + (Math.random() - 0.5) * 60,
     vx: Math.cos(a) * sp,
     vy: Math.sin(a) * sp,
+    rot: (Math.random() - 0.5) * 0.6, // current tumble angle
+    vr: (Math.random() - 0.5) * 0.06, // tumble speed (kept slow)
+    sway: Math.random() * Math.PI * 2, // wobble phase
+    swaySpd: 0.05 + Math.random() * 0.1,
+    swayAmp: 0.5 + Math.random() * 1.5,
     text,
     base: text,
     readme,
     gz: 0, // glitch frames remaining
     color: `hsl(${(Math.random() * 360) | 0} 100% ${60 + (Math.random() * 15) | 0}%)`,
-    size: 13 + ((Math.random() * 20) | 0)
+    size: 12 + ((Math.random() * 14) | 0)
   });
 }
 function corrupt(p) {
@@ -167,13 +188,21 @@ function corrupt(p) {
 }
 function frame() {
   ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.textBaseline = 'middle';
   for (let i = 0; i < parts.length; i++) {
     const p = parts[i];
     p.x += p.vx; p.y += p.vy;
+    p.rot += p.vr;
+    p.sway += p.swaySpd;
     if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); }
     else if (p.x > innerWidth - 60) { p.x = innerWidth - 60; p.vx = -Math.abs(p.vx); }
     if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy); }
     else if (p.y > innerHeight - 20) { p.y = innerHeight - 20; p.vy = -Math.abs(p.vy); }
+    const wx = Math.cos(p.sway) * p.swayAmp;
+    const wy = Math.sin(p.sway * 1.3) * p.swayAmp;
+    ctx.save();
+    ctx.translate(p.x + wx, p.y + wy);
+    ctx.rotate(p.rot);
     ctx.font = p.size + 'px monospace';
     if (p.readme && p.gz > 0) {
       // active glitch burst: RGB split + jitter + char corruption
@@ -183,12 +212,12 @@ function frame() {
       const dy = Math.random() < 0.3 ? (Math.random() - 0.5) * 8 : 0;
       ctx.globalAlpha = 0.7;
       ctx.fillStyle = '#ff00ff';
-      ctx.fillText(p.text, p.x - 2 + dx, p.y + dy);
+      ctx.fillText(p.text, -2 + dx, dy);
       ctx.fillStyle = '#00ffff';
-      ctx.fillText(p.text, p.x + 2 + dx, p.y + dy);
+      ctx.fillText(p.text, 2 + dx, dy);
       ctx.globalAlpha = 1;
       ctx.fillStyle = p.color;
-      ctx.fillText(p.text, p.x + dx, p.y + dy);
+      ctx.fillText(p.text, dx, dy);
       if (p.gz === 0 && Math.random() < 0.6) p.text = p.base; // snap back
     } else {
       if (p.readme && Math.random() < 0.02) p.gz = 3 + ((Math.random() * 6) | 0);
@@ -196,13 +225,14 @@ function frame() {
         // flicker pass — single draw, cheap
         ctx.globalAlpha = 0.35 + Math.random() * 0.65;
         ctx.fillStyle = p.color;
-        ctx.fillText(p.text, p.x, p.y);
+        ctx.fillText(p.text, 0, 0);
         ctx.globalAlpha = 1;
       } else {
         ctx.fillStyle = p.color;
-        ctx.fillText(p.text, p.x, p.y);
+        ctx.fillText(p.text, 0, 0);
       }
     }
+    ctx.restore();
   }
   rafId = requestAnimationFrame(frame);
 }
@@ -224,7 +254,9 @@ function boxPhase(done) {
     const ease = k * k * k; // accelerates toward viewer
     rot += 4 + ease * 14;
     const scale = 0.4 + ease * 9;
-    cube.style.transform = `translateZ(${ease * 320}px) rotateX(${rot}deg) rotateY(${rot * 1.3}deg) scale(${scale})`;
+    const swayX = Math.sin(k * Math.PI * 3) * 60 * (1 - k); // swings side to side, settles on approach
+    const swayY = Math.cos(k * Math.PI * 2) * 30 * (1 - k);
+    cube.style.transform = `translateX(${swayX}px) translateY(${swayY}px) translateZ(${ease * 320}px) rotateX(${rot}deg) rotateY(${rot * 1.3}deg) scale(${scale})`;
     if (k < 1) requestAnimationFrame(step);
     else done();
   })(t0);
@@ -307,20 +339,13 @@ function forgivePhase() {
 }
 
 function landDashboard() {
-  // stop the chaos generator + render loop
-  if (genId) clearInterval(genId);
-  if (rafId) cancelAnimationFrame(rafId);
-  sorryEl.style.opacity = '0';
+  // split-file mode: intro lives in index.html, dashboard lives in dashboard.html
+  // fade out instead of a hard cut
+  sorryEl.textContent = 'entering dashboard…';
+  sorryEl.style.opacity = '1';
   topbar.classList.remove('show');
-  setTimeout(() => {
-    cv.style.display = 'none';
-    crack.style.display = 'none';
-    document.getElementById('scan').style.display = 'none';
-    sorryEl.style.display = 'none';
-    topbar.style.display = 'none';
-    quip.style.display = 'none';
-    dash.classList.add('show');
-  }, 600);
+  document.getElementById('fade').classList.add('on');
+  setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
 }
 
 // ---------- synthesized glass-crack sound (no audio files) ----------
@@ -368,7 +393,7 @@ function playCrack() {
 (async () => {
   await loadWords();
   ensureAudio();
-  let n = 10;
+  let n = 3;
   countEl.textContent = n;
   const timer = setInterval(() => {
     n--;
@@ -379,14 +404,14 @@ function playCrack() {
         countEl.remove();
         boxPhase(() => {
           impact();
-          for (let i = 0; i < 70; i++) spawnOne();
+          for (let i = 0; i < 36; i++) spawnOne();
           rafId = requestAnimationFrame(frame);
-          // accelerating but CAPPED generator — never exceeds MAX particles
+          // slow generator, CAPPED — never exceeds MAX particles
           let batch = 2;
           genId = setInterval(() => {
             for (let i = 0; i < Math.floor(batch); i++) spawnOne();
-            if (batch < 9) batch *= 1.1;
-          }, 250);
+            if (batch < 4) batch *= 1.05;
+          }, 450);
         });
       }, 500);
     } else countEl.textContent = n;

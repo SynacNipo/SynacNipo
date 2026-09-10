@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>synacni</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: #000; }
+  body {
+    background: #000;
+    color: #e8e8e8;
+    font-family: monospace;
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 48px 20px 80px;
+  }
+  ::selection { background: #0ff; color: #000; }
+  .wrap { max-width: 620px; margin: 0 auto; }
+  header { margin-bottom: 32px; }
+  header .top { color: #666; font-size: 13px; margin-bottom: 12px; }
+  h1 { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
+  h1::after { content: "_"; color: #0ff; animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .sub { color: #999; }
+  nav { margin: 24px 0 0; font-size: 14px; color: #666; }
+  nav a { color: #fff; text-decoration: none; }
+  nav a:hover { color: #0ff; text-decoration: underline; }
+  hr { border: 0; border-top: 1px solid #222; margin: 32px 0; }
+  section { margin-bottom: 8px; }
+  .k { color: #0ff; font-size: 13px; margin-bottom: 8px; }
+  h2 { font-size: 16px; margin-bottom: 8px; }
+  p, li { color: #ccc; }
+  ul { list-style: none; margin-top: 8px; }
+  li { padding: 6px 0; border-top: 1px dashed #222; }
+  li:first-child { border-top: 0; }
+  .st { color: #666; font-size: 13px; }
+  .st.live { color: #0ff; }
+  .st.wip { color: #f0f; }
+  a { color: #0ff; }
+  a:hover { color: #fff; }
+  details { margin-top: 6px; }
+  details summary { cursor: pointer; color: #888; font-size: 13px; }
+  details summary:hover { color: #0ff; }
+  details ul { margin-left: 16px; }
+  footer { margin-top: 16px; color: #666; font-size: 13px; }
+  footer a { color: #888; }
+  #enter {
+    position: fixed; inset: 0; background: #000; opacity: 1;
+    pointer-events: none; z-index: 50; transition: opacity 0.9s ease;
+  }
+  #enter.off { opacity: 0; }
+</style>
+</head>
+<body>
+<div id="enter"></div>
+<div class="wrap">
+  <header>
+    <div class="top">synacni.is-a.dev — wip</div>
+    <h1>synacni</h1>
+    <p class="sub">Personal dev site for messing with index.html, sharing thoughts / media, and linking projects for friends.</p>
+    <nav><a href="#about">about</a> / <a href="#projects">projects</a> / <a href="#personal">personal</a> / <a href="#contact">contact</a> / <a href="index.html">replay intro</a></nav>
+  </header>
+
+  <hr />
+
+  <section id="about">
+    <div class="k">~/about</div>
+    <h2>My work</h2>
+    <p>I use <a href="https://opencode.ai/">opencode</a> for many of my projects. It helps but I usually fine-tune everything myself and make sure I understand what I'm building. I try to avoid low-effort AI-generated content.</p>
+  </section>
+
+  <hr />
+
+  <section id="projects">
+    <div class="k">~/projects</div>
+    <h2>Projects</h2>
+    <ul>
+      <li><a href="https://github.com/SynacNipo/Sacram">Sacram</a> — spare Android phone as WiFi Direct hotspot + proxy (SOCKS5 / HTTP), PdaNet replacement</li>
+      <li><a href="https://github.com/HugoCirca">HugoCirca</a> — org for short-lived projects
+        <details>
+          <summary>projects inside</summary>
+          <ul>
+            <li><a href="https://github.com/HugoCirca/Offdis-VM">Offdis-VM</a> — YouTube live chat controls VirtualBox VMs</li>
+            <li><a href="https://github.com/HugoCirca/command-line-mcp">command-line-mcp</a> — command-line access for Claude on your machine</li>
+            <li><a href="https://github.com/HugoCirca/Knapsack">Knapsack</a> — Minecraft plugin (Java)</li>
+            <li><a href="https://github.com/HugoCirca/tailscale">tailscale</a> — Tailscale android CLI build for Termux</li>
+          </ul>
+        </details>
+      </li>
+      <li><a href="https://github.com/HugoCirca/Offdis-VM">Offdis-VM</a> — Node.js console driving VirtualBox through YouTube live chat</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="personal">
+    <div class="k">~/personal</div>
+    <h2>Personal tab</h2>
+    <p>Thoughts / media drops for friends go here. Still setting it up — check back after the domain lands.</p>
+  </section>
+
+  <hr />
+
+  <section id="contact">
+    <div class="k">~/contact</div>
+    <h2>Contact</h2>
+    <p>discord: synacni<br /><a href="https://discord.com/users/1459512144377679952">discord profile</a> (may take a moment to load)</p>
+  </section>
+
+  <hr />
+
+  <footer><a href="index.html">← bomb intro</a></footer>
+</div>
+<script>
+  // fade in from the intro's fade-to-black instead of a hard cut
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const enter = document.getElementById('enter');
+    if (enter) {
+      enter.classList.add('off');
+      setTimeout(() => enter.remove(), 1000);
+    }
+  }));
+</script>
+</body>
+</html>
