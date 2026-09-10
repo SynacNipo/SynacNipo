@@ -40,6 +40,34 @@
     pointer-events: none; user-select: none; z-index: 10;
     text-shadow: 0 0 12px #0ff; white-space: nowrap;
   }
+  #sorry {
+    position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    color: #fff; font-size: 20px; letter-spacing: 1px; opacity: 0;
+    pointer-events: none; user-select: none; z-index: 10; text-align: center;
+    text-shadow: 0 0 14px #f0f; transition: opacity 0.8s; white-space: nowrap;
+  }
+  #topbar {
+    position: fixed; left: 50%; top: 14px; transform: translate(-50%,-150%);
+    transition: transform 1.4s ease-out; z-index: 11;
+    background: rgba(0,0,0,0.65); border: 1px solid #f0f; border-radius: 20px;
+    color: #ffd7f2; font-size: 15px; letter-spacing: 2px; padding: 8px 20px;
+    pointer-events: none; user-select: none; white-space: nowrap;
+    box-shadow: 0 0 18px rgba(255,0,255,0.5);
+  }
+  #topbar.show { transform: translate(-50%,0); }
+  #dash {
+    position: fixed; inset: 0; z-index: 20; opacity: 0; display: none;
+    transition: opacity 1.2s; pointer-events: none;
+    background: linear-gradient(135deg, #ff4fa3, #ff77c8, #c847ff, #ff2e88, #ff4fa3);
+    background-size: 300% 300%;
+    animation: dashflow 12s ease infinite;
+  }
+  #dash.show { display: block; opacity: 1; }
+  @keyframes dashflow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
   body.shake #cv, body.shake #crack { animation: shake 0.5s; }
   @keyframes shake {
     0% { transform: translate(0,0); }
@@ -61,6 +89,9 @@
 <div id="scan"></div>
 <svg id="crack"></svg>
 <div id="quip">oh. you felt that too, huh?</div>
+<div id="sorry">sorry about that — you're forgiven. dashboard incoming.</div>
+<div id="topbar">forgiven in <span id="topnum">20</span>s</div>
+<div id="dash"></div>
 
 <script>
 // ---------- word source (crypto / cracked mentions filtered out) ----------
@@ -173,7 +204,7 @@ function frame() {
       }
     }
   }
-  requestAnimationFrame(frame);
+  rafId = requestAnimationFrame(frame);
 }
 
 // ---------- box flies at the screen ----------
@@ -246,10 +277,50 @@ function impact() {
     flash.style.opacity = '0';
   });
   setTimeout(() => document.body.classList.remove('shake'), 550);
-  // fourth-wall line, fades in/out once
+  // fourth-wall line, fades in/out once, then apology + timer phase
   quip.style.transition = 'opacity 0.6s';
   quip.style.opacity = '1';
-  setTimeout(() => { quip.style.opacity = '0'; }, 2600);
+  setTimeout(() => { quip.style.opacity = '0'; forgivePhase(); }, 2600);
+}
+
+const sorryEl = document.getElementById('sorry');
+const topbar = document.getElementById('topbar');
+const topnum = document.getElementById('topnum');
+const dash = document.getElementById('dash');
+let rafId = 0;
+let genId = 0;
+
+function forgivePhase() {
+  sorryEl.style.opacity = '1';
+  // timer pill slowly slides down from the top
+  requestAnimationFrame(() => topbar.classList.add('show'));
+  let t = 20;
+  topnum.textContent = t;
+  const cd = setInterval(() => {
+    t--;
+    if (t <= 0) {
+      clearInterval(cd);
+      topnum.textContent = '0';
+      landDashboard();
+    } else topnum.textContent = t;
+  }, 1000);
+}
+
+function landDashboard() {
+  // stop the chaos generator + render loop
+  if (genId) clearInterval(genId);
+  if (rafId) cancelAnimationFrame(rafId);
+  sorryEl.style.opacity = '0';
+  topbar.classList.remove('show');
+  setTimeout(() => {
+    cv.style.display = 'none';
+    crack.style.display = 'none';
+    document.getElementById('scan').style.display = 'none';
+    sorryEl.style.display = 'none';
+    topbar.style.display = 'none';
+    quip.style.display = 'none';
+    dash.classList.add('show');
+  }, 600);
 }
 
 // ---------- synthesized glass-crack sound (no audio files) ----------
@@ -309,10 +380,10 @@ function playCrack() {
         boxPhase(() => {
           impact();
           for (let i = 0; i < 70; i++) spawnOne();
-          requestAnimationFrame(frame);
+          rafId = requestAnimationFrame(frame);
           // accelerating but CAPPED generator — never exceeds MAX particles
           let batch = 2;
-          setInterval(() => {
+          genId = setInterval(() => {
             for (let i = 0; i < Math.floor(batch); i++) spawnOne();
             if (batch < 9) batch *= 1.1;
           }, 250);
