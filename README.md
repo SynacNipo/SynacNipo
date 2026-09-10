@@ -4,9 +4,6 @@ I use [opencode](https://www.opencode.ai) for many of my projects. It helps but 
 <details>
 <summary>Click to reveal additional info</summary>
 
-## Favorite Game
-**Minecraft** — https://minecraft.net
-I currently use a cracked version because I can't afford an official copy. While it's relatively inexpensive in the US, it costs around **MYR 116** here, which is a lot for me.
 
 ## Support Me
 If you'd like to support my work, I accept crypto donation. No pressure at all
