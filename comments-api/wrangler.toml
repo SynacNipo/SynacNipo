@@ -1,0 +1,12 @@
+name = "synacni-comments"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+SITE_URL = "https://synacnipo.github.io/SynacNipo/personal.html"
+ALLOWED_ORIGINS = "https://synacnipo.github.io, http://localhost:8123"
+
+# paste your KV namespace id after running: wrangler kv namespace create KB
+[[kv_namespaces]]
+binding = "KB"
+id = "7a5bd81310eb4c43b7f06df1a0aa79f7"

@@ -66,6 +66,12 @@
     box-shadow: 0 0 18px rgba(255,0,255,0.5);
   }
   #topbar.show { transform: translate(-50%,0); }
+  #skip {
+    position: fixed; right: 16px; bottom: 16px; z-index: 40;
+    background: rgba(0,0,0,0.65); border: 1px solid #333; border-radius: 10px;
+    color: #888; font: inherit; font-size: 13px; padding: 8px 16px; cursor: pointer;
+  }
+  #skip:hover { color: #0ff; border-color: #0ff; }
   #dash {
     position: fixed; inset: 0; z-index: 20; opacity: 0; display: none;
     transition: opacity 1.2s; pointer-events: none;
@@ -103,6 +109,7 @@
 <div id="quip">oh. you felt that too, huh?</div>
 <div id="sorry">sorry about that — you're forgiven. dashboard incoming.</div>
 <div id="topbar">forgiven in <span id="topnum">20</span>s</div>
+<button id="skip" type="button">skip →</button>
 <div id="dash"></div>
 <div id="fade"></div>
 
@@ -321,6 +328,7 @@ const topnum = document.getElementById('topnum');
 const dash = document.getElementById('dash');
 let rafId = 0;
 let genId = 0;
+document.getElementById('skip').addEventListener('click', () => landDashboard());
 
 function forgivePhase() {
   sorryEl.style.opacity = '1';

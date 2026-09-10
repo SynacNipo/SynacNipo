@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>synacni — fun</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: #000; }
+  body {
+    background: #000;
+    color: #e8e8e8;
+    font-family: monospace;
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 48px 20px 80px;
+  }
+  ::selection { background: #0ff; color: #000; }
+  .wrap { max-width: 620px; margin: 0 auto; }
+  .top { color: #666; font-size: 13px; margin-bottom: 12px; }
+  h1 { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
+  h1::after { content: "_"; color: #0ff; animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .sub { color: #999; }
+  nav { margin: 24px 0 0; font-size: 14px; color: #666; }
+  nav a { color: #fff; text-decoration: none; }
+  nav a:hover { color: #0ff; text-decoration: underline; }
+  hr { border: 0; border-top: 1px solid #222; margin: 32px 0; }
+  .k { color: #0ff; font-size: 13px; margin-bottom: 8px; }
+  h2 { font-size: 16px; margin-bottom: 8px; }
+  p { color: #ccc; }
+  .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  input[type="text"] {
+    flex: 1; min-width: 200px; background: #000; color: #fff;
+    border: 1px solid #333; padding: 9px 12px; font: inherit; font-size: 14px;
+  }
+  input[type="text"]:focus { outline: none; border-color: #0ff; }
+  button {
+    background: #000; color: #0ff; border: 1px solid #0ff;
+    padding: 9px 16px; font: inherit; font-size: 14px; cursor: pointer;
+  }
+  button:hover { background: #0ff; color: #000; }
+  #garble-out { margin-top: 10px; color: #f0f; word-break: break-all; min-height: 24px; }
+  img { max-width: 100%; display: block; margin-top: 12px; border: 1px solid #222; }
+  a { color: #0ff; }
+  a:hover { color: #fff; }
+  footer { margin-top: 16px; color: #666; font-size: 13px; }
+  footer a { color: #888; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">synacni — fun</div>
+  <h1>fun tab</h1>
+  <p class="sub">Dumb little toys. More later, maybe.</p>
+  <nav><a href="dashboard.html">← dashboard</a> / <a href="index.html">replay intro</a></nav>
+
+  <hr />
+
+  <div class="k">~/garble-machine</div>
+  <h2>Garble machine</h2>
+  <p>Type something, get garbage back.</p>
+  <div class="row">
+    <input type="text" id="garble-in" placeholder="type here..." maxlength="120" />
+    <button id="garble-go" type="button">garble it</button>
+  </div>
+  <p id="garble-out"></p>
+
+  <hr />
+
+  <div class="k">~/pics</div>
+  <h2>Pics</h2>
+  <img src="things/GreenOrLie.png" alt="GreenOrLie" />
+  <img src="things/cinematic.png" alt="cinematic" />
+
+  <hr />
+
+  <footer><a href="dashboard.html">← dashboard</a></footer>
+</div>
+<script>
+  const GCHARS = '!@#$%^&*+=<>?/01ABCEFHKMNPRSTUVXYZacehikmnorstuvxy';
+  function garbleIt() {
+    const inp = document.getElementById('garble-in');
+    const out = document.getElementById('garble-out');
+    const src = inp.value.trim() || 'type something first';
+    let s = '';
+    for (const c of src) {
+      if (c === ' ') { s += ' '; continue; }
+      s += Math.random() < 0.45 ? c : GCHARS[(Math.random() * GCHARS.length) | 0];
+    }
+    out.textContent = s;
+  }
+  document.getElementById('garble-go').addEventListener('click', garbleIt);
+  document.getElementById('garble-in').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') garbleIt();
+  });
+</script>
+</body>
+</html>

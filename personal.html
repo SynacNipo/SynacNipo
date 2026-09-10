@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>synacni — personal</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: #000; }
+  body {
+    background: #000;
+    color: #e8e8e8;
+    font-family: monospace;
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 48px 20px 80px;
+  }
+  ::selection { background: #0ff; color: #000; }
+  .wrap { max-width: 620px; margin: 0 auto; }
+  .top { color: #666; font-size: 13px; margin-bottom: 12px; }
+  h1 { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
+  h1::after { content: "_"; color: #0ff; animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .sub { color: #999; }
+  nav { margin: 24px 0 0; font-size: 14px; color: #666; }
+  nav a { color: #fff; text-decoration: none; }
+  nav a:hover { color: #0ff; text-decoration: underline; }
+  hr { border: 0; border-top: 1px solid #222; margin: 32px 0; }
+  .k { color: #0ff; font-size: 13px; margin-bottom: 8px; }
+  .entry { margin-bottom: 28px; }
+  .entry:last-child { margin-bottom: 0; }
+  .date { color: #666; font-size: 13px; margin-bottom: 6px; }
+  .entry p { color: #ccc; }
+  a { color: #0ff; }
+  a:hover { color: #fff; }
+  footer { margin-top: 16px; color: #666; font-size: 13px; }
+  footer a { color: #888; }
+  .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  input[type="text"] {
+    flex: 1; min-width: 200px; background: #000; color: #fff;
+    border: 1px solid #333; padding: 9px 12px; font: inherit; font-size: 14px;
+  }
+  input[type="text"]:focus { outline: none; border-color: #0ff; }
+  button {
+    background: #000; color: #0ff; border: 1px solid #0ff;
+    padding: 9px 16px; font: inherit; font-size: 14px; cursor: pointer;
+  }
+  button:hover { background: #0ff; color: #000; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #c-msg { margin-top: 8px; font-size: 13px; color: #f0f; min-height: 20px; }
+  #clist .entry { border-top: 1px dashed #222; padding-top: 14px; }
+  #auth-row { color: #666; font-size: 13px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">synacni — personal</div>
+  <h1>personal tab</h1>
+  <p class="sub">Thoughts / media drops for friends. Only I post here.</p>
+  <nav><a href="dashboard.html">← dashboard</a></nav>
+
+  <hr />
+
+  <div id="log">
+  <div class="entry">
+    <div class="date">2026-09-11</div>
+    <p>Setting this page up. More drops soon.</p>
+  </div>
+  </div>
+
+  <hr />
+
+  <div class="k">~/comments</div>
+  <h2>Comments</h2>
+  <p id="auth-row"><a href="#" id="login-link">login with github</a> <span id="who"></span></p>
+  <div id="clist"></div>
+  <div class="row">
+    <input type="text" id="c-name" placeholder="name..." maxlength="30" />
+  </div>
+  <div class="row">
+    <input type="text" id="c-body" placeholder="say something..." maxlength="500" />
+    <button id="c-send" type="button">post</button>
+  </div>
+  <p id="c-msg"></p>
+
+  <hr />
+
+  <footer><a href="dashboard.html">← dashboard</a></footer>
+</div>
+<script>
+  // entries live in things/log.json (edited via /admin) — newest first.
+  // falls back to the baked-in entry above if the fetch fails (e.g. file:// preview).
+  fetch('things/log.json').then((r) => r.ok ? r.json() : null).then((d) => {
+    if (!d || !d.entries || !d.entries.length) return;
+    const wrap = document.getElementById('log');
+    wrap.innerHTML = '';
+    [...d.entries].reverse().forEach((e) => {
+      let date = e.date || '';
+      const t = Date.parse(date);
+      if (!isNaN(t)) date = new Date(t).toISOString().slice(0, 10);
+      const div = document.createElement('div');
+      div.className = 'entry';
+      const dt = document.createElement('div');
+      dt.className = 'date';
+      dt.textContent = date;
+      const p = document.createElement('p');
+      p.textContent = e.body || '';
+      div.append(dt, p);
+      wrap.append(div);
+    });
+  }).catch(() => {});
+</script>
+<script>
+  // guestbook comments — talks to the worker API (see comments-api/).
+  // empty API_BASE = offline mode (shows a note instead of breaking).
+  const API_BASE = 'https://synacni-comments.synacnipo.workers.dev';
+  (function () {
+    const list = document.getElementById('clist');
+    const msg = document.getElementById('c-msg');
+    const send = document.getElementById('c-send');
+    if (!API_BASE) {
+      list.innerHTML = '<p style="color:#666">comments offline — api not deployed yet.</p>';
+      send.disabled = true;
+      return;
+    }
+    const api = (p, opts = {}) => fetch(API_BASE + p, { credentials: 'include', ...opts });
+    let owner = false;
+    async function load() {
+      try {
+        const m = await api('/api/auth/me');
+        if (m.ok) {
+          const d = await m.json();
+          owner = !!d.owner;
+          document.getElementById('who').textContent = d.user ? 'logged in as ' + d.user + (owner ? ' (owner)' : '') : '';
+          document.getElementById('login-link').style.display = d.user ? 'none' : '';
+        }
+      } catch {}
+      try {
+        const r = await api('/api/comments');
+        const d = await r.json();
+        list.innerHTML = '';
+        (d.comments || []).forEach((c) => {
+          const div = document.createElement('div');
+          div.className = 'entry';
+          const dt = document.createElement('div');
+          dt.className = 'date';
+          dt.textContent = (c.at || '').slice(0, 10) + ' — ' + c.name + (c.owner ? ' (owner)' : '');
+          const p = document.createElement('p');
+          p.textContent = c.body;
+          div.append(dt, p);
+          if (owner) {
+            const del = document.createElement('a');
+            del.href = '#';
+            del.textContent = 'delete';
+            del.style.cssText = 'font-size:12px;color:#666';
+            del.addEventListener('click', async (e) => {
+              e.preventDefault();
+              await api('/api/comments/' + c.id + '/delete', { method: 'POST' });
+              load();
+            });
+            div.append(del);
+          }
+          list.append(div);
+        });
+        if (!d.comments || !d.comments.length) list.innerHTML = '<p style="color:#666">no comments yet.</p>';
+      } catch { list.innerHTML = '<p style="color:#666">could not load comments.</p>'; }
+    }
+    document.getElementById('login-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      location.href = API_BASE + '/api/auth/login';
+    });
+    send.addEventListener('click', async () => {
+      const name = document.getElementById('c-name').value.trim();
+      const body = document.getElementById('c-body').value.trim();
+      const r = await api('/api/comments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, body }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        document.getElementById('c-body').value = '';
+        msg.textContent = 'posted.';
+        load();
+      } else {
+        msg.textContent = d.error || 'failed.';
+      }
+    });
+    load();
+  })();
+</script>
+</body>
+</html>
