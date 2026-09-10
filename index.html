@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>...</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: monospace; }
+  #cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+  #count {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 22vw; font-weight: bold; user-select: none; pointer-events: none; z-index: 5;
+  }
+  #boxwrap {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    perspective: 600px; pointer-events: none; z-index: 6;
+  }
+  #cube {
+    width: 120px; height: 120px; position: relative;
+    transform-style: preserve-3d; will-change: transform;
+  }
+  #cube .face {
+    position: absolute; inset: 0;
+    border: 3px solid #0ff; background: rgba(0,255,255,0.12);
+    box-shadow: inset 0 0 30px rgba(0,255,255,0.35);
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 8;
+  }
+  #crack { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 9; }
+  #scan {
+    position: fixed; inset: 0; pointer-events: none; z-index: 7;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
+  }
+  #quip {
+    position: fixed; left: 50%; bottom: 8%; transform: translateX(-50%);
+    color: #fff; font-size: 18px; letter-spacing: 1px; opacity: 0;
+    pointer-events: none; user-select: none; z-index: 10;
+    text-shadow: 0 0 12px #0ff; white-space: nowrap;
+  }
+  body.shake #cv, body.shake #crack { animation: shake 0.5s; }
+  @keyframes shake {
+    0% { transform: translate(0,0); }
+    20% { transform: translate(-14px,8px); }
+    40% { transform: translate(12px,-10px); }
+    60% { transform: translate(-9px,-6px); }
+    80% { transform: translate(6px,5px); }
+    100% { transform: translate(0,0); }
+  }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="count">10</div>
+<div id="boxwrap"><div id="cube">
+  <div class="face"></div>
+</div></div>
+<div id="flash"></div>
+<div id="scan"></div>
+<svg id="crack"></svg>
+<div id="quip">oh. you felt that too, huh?</div>
+
+<script>
+// ---------- word source (crypto / cracked mentions filtered out) ----------
+const FALLBACK = `My Work I use opencode https://www.opencode.ai for many of my projects It helps but I usually fine-tune everything myself and make sure I understand what I'm building I try to avoid low-effort AI-generated content Favorite Game Minecraft https://minecraft.net Contact Discord synacni Or message me directly https://discord.com/users/1459512144377679952 Note It may take a few moments for the Discord profile to load`;
+const BLOCK_LINE = /cracked|afford|MYR|inexpensive|official copy|crypto|donation|support me|solana|USDC|SPL|He6q|network only|No pressure/i;
+const BLOCK_WORD = /^(cracked|afford|crypto|donation|solana|USDC|SPL|MYR|116|He6q.*)$/i;
+function cleanText(text) {
+  return text.split('\n').filter(l => !BLOCK_LINE.test(l)).join('\n')
+    .replace(/[#*`<>]/g, ' ').split(/\s+/).filter(w => w && !BLOCK_WORD.test(w) && !/He6q/.test(w));
+}
+let words = [];
+async function loadWords() {
+  try {
+    const res = await fetch('README.md');
+    words = cleanText(res.ok ? await res.text() : FALLBACK);
+  } catch { words = FALLBACK.split(/\s+/); }
+  if (!words.length) words = cleanText(FALLBACK);
+}
+
+// ---------- canvas setup (capped DPR = no lag) ----------
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const DPR = Math.min(devicePixelRatio || 1, 1.25);
+function fit() {
+  cv.width = Math.floor(innerWidth * DPR);
+  cv.height = Math.floor(innerHeight * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+fit();
+addEventListener('resize', fit);
+
+const GARBLE = '!@#$%^&*+=<>?/01ABCEFHKMNPRSTUVXYZacehikmnorstuvxy';
+const GLITCH_CHARS = '█▓▒░<>/\\|#@$%&01';
+function garble(len) {
+  let s = '';
+  for (let i = 0; i < len; i++) s += GARBLE[(Math.random() * GARBLE.length) | 0];
+  return s;
+}
+function pickReadme() {
+  const n = 1 + ((Math.random() * 2) | 0);
+  let s = words[(Math.random() * words.length) | 0];
+  for (let i = 1; i < n; i++) s += ' ' + words[(Math.random() * words.length) | 0];
+  return s;
+}
+
+// ---------- particles: hard-capped, no shadowBlur, no rotation ----------
+const MAX = 320;
+const parts = [];
+function spawnOne() {
+  if (parts.length >= MAX) parts.shift(); // recycle oldest, never grow DOM/canvas cost
+  const a = Math.random() * Math.PI * 2;
+  const sp = 1 + Math.random() * 3.5;
+  const readme = Math.random() < 0.6;
+  const text = readme ? pickReadme() : garble(3 + ((Math.random() * 9) | 0));
+  parts.push({
+    x: innerWidth / 2 + (Math.random() - 0.5) * 60,
+    y: innerHeight / 2 + (Math.random() - 0.5) * 60,
+    vx: Math.cos(a) * sp,
+    vy: Math.sin(a) * sp,
+    text,
+    base: text,
+    readme,
+    gz: 0, // glitch frames remaining
+    color: `hsl(${(Math.random() * 360) | 0} 100% ${60 + (Math.random() * 15) | 0}%)`,
+    size: 13 + ((Math.random() * 20) | 0)
+  });
+}
+function corrupt(p) {
+  if (!p.text.length) return;
+  const i = (Math.random() * p.text.length) | 0;
+  const c = GLITCH_CHARS[(Math.random() * GLITCH_CHARS.length) | 0];
+  p.text = p.text.slice(0, i) + c + p.text.slice(i + 1);
+}
+function frame() {
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); }
+    else if (p.x > innerWidth - 60) { p.x = innerWidth - 60; p.vx = -Math.abs(p.vx); }
+    if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy); }
+    else if (p.y > innerHeight - 20) { p.y = innerHeight - 20; p.vy = -Math.abs(p.vy); }
+    ctx.font = p.size + 'px monospace';
+    if (p.readme && p.gz > 0) {
+      // active glitch burst: RGB split + jitter + char corruption
+      p.gz--;
+      if (Math.random() < 0.5) corrupt(p);
+      const dx = (Math.random() - 0.5) * 16;
+      const dy = Math.random() < 0.3 ? (Math.random() - 0.5) * 8 : 0;
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = '#ff00ff';
+      ctx.fillText(p.text, p.x - 2 + dx, p.y + dy);
+      ctx.fillStyle = '#00ffff';
+      ctx.fillText(p.text, p.x + 2 + dx, p.y + dy);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = p.color;
+      ctx.fillText(p.text, p.x + dx, p.y + dy);
+      if (p.gz === 0 && Math.random() < 0.6) p.text = p.base; // snap back
+    } else {
+      if (p.readme && Math.random() < 0.02) p.gz = 3 + ((Math.random() * 6) | 0);
+      if (p.readme && Math.random() < 0.03) {
+        // flicker pass — single draw, cheap
+        ctx.globalAlpha = 0.35 + Math.random() * 0.65;
+        ctx.fillStyle = p.color;
+        ctx.fillText(p.text, p.x, p.y);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.fillText(p.text, p.x, p.y);
+      }
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------- box flies at the screen ----------
+const countEl = document.getElementById('count');
+const boxwrap = document.getElementById('boxwrap');
+const cube = document.getElementById('cube');
+const flash = document.getElementById('flash');
+const crack = document.getElementById('crack');
+const quip = document.getElementById('quip');
+
+function boxPhase(done) {
+  boxwrap.style.display = 'flex';
+  const t0 = performance.now(), DUR = 2200;
+  let rot = 0;
+  (function step(t) {
+    const k = Math.min((t - t0) / DUR, 1);
+    const ease = k * k * k; // accelerates toward viewer
+    rot += 4 + ease * 14;
+    const scale = 0.4 + ease * 9;
+    cube.style.transform = `translateZ(${ease * 320}px) rotateX(${rot}deg) rotateY(${rot * 1.3}deg) scale(${scale})`;
+    if (k < 1) requestAnimationFrame(step);
+    else done();
+  })(t0);
+}
+
+function makeCracks() {
+  const W = innerWidth, H = innerHeight;
+  const cx = W / 2, cy = H / 2;
+  crack.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  let html = '';
+  const arms = 11;
+  for (let i = 0; i < arms; i++) {
+    const a = (i / arms) * Math.PI * 2 + Math.random() * 0.4;
+    let x = cx, y = cy;
+    const segs = 6 + ((Math.random() * 4) | 0);
+    const maxLen = Math.hypot(W, H) * 0.6;
+    let d = `M ${x} ${y}`;
+    let ang = a;
+    for (let s = 0; s < segs; s++) {
+      const len = (maxLen / segs) * (0.6 + Math.random() * 0.8);
+      ang += (Math.random() - 0.5) * 0.7;
+      x += Math.cos(ang) * len;
+      y += Math.sin(ang) * len;
+      d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    html += `<path d="${d}" stroke="rgba(255,255,255,0.9)" stroke-width="2" fill="none"/>`;
+    // one branch per arm
+    const bx = cx + (x - cx) * 0.4, by = cy + (y - cy) * 0.4;
+    const ba = ang + (Math.random() < 0.5 ? 0.7 : -0.7);
+    const bl = maxLen * 0.18 * Math.random();
+    html += `<path d="M ${bx.toFixed(1)} ${by.toFixed(1)} L ${(bx + Math.cos(ba) * bl).toFixed(1)} ${(by + Math.sin(ba) * bl).toFixed(1)}" stroke="rgba(255,255,255,0.55)" stroke-width="1.2" fill="none"/>`;
+  }
+  // impact spiderweb rings
+  for (const r of [40, 90, 150]) {
+    html += `<circle cx="${cx}" cy="${cy}" r="${r}" stroke="rgba(255,255,255,0.25)" stroke-width="1" fill="none"/>`;
+  }
+  crack.innerHTML = html;
+  crack.style.display = 'block';
+}
+
+function impact() {
+  playCrack();
+  boxwrap.style.display = 'none';
+  makeCracks();
+  document.body.classList.add('shake');
+  flash.style.transition = 'none';
+  flash.style.opacity = '0.9';
+  requestAnimationFrame(() => {
+    flash.style.transition = 'opacity 0.4s';
+    flash.style.opacity = '0';
+  });
+  setTimeout(() => document.body.classList.remove('shake'), 550);
+  // fourth-wall line, fades in/out once
+  quip.style.transition = 'opacity 0.6s';
+  quip.style.opacity = '1';
+  setTimeout(() => { quip.style.opacity = '0'; }, 2600);
+}
+
+// ---------- synthesized glass-crack sound (no audio files) ----------
+let actx = null;
+function ensureAudio() {
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function playCrack() {
+  try {
+    ensureAudio();
+    if (!actx || actx.state !== 'running') return; // autoplay blocked: stay silent
+    const t = actx.currentTime;
+    const comp = actx.createDynamicsCompressor();
+    comp.connect(actx.destination);
+    // 1) sharp noise snap with fast decay
+    const dur = 0.6;
+    const buf = actx.createBuffer(1, Math.floor(actx.sampleRate * dur), actx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / ch.length, 2.2);
+    const noise = actx.createBufferSource(); noise.buffer = buf;
+    const nf = actx.createBiquadFilter(); nf.type = 'lowpass';
+    nf.frequency.setValueAtTime(6500, t);
+    nf.frequency.exponentialRampToValueAtTime(280, t + 0.5);
+    const ng = actx.createGain();
+    ng.gain.setValueAtTime(1.0, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    noise.connect(nf); nf.connect(ng); ng.connect(comp);
+    noise.start(t); noise.stop(t + dur);
+    // 2) low impact thump under it
+    const osc = actx.createOscillator(); osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, t);
+    osc.frequency.exponentialRampToValueAtTime(32, t + 0.35);
+    const og = actx.createGain();
+    og.gain.setValueAtTime(0.9, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    osc.connect(og); og.connect(comp);
+    osc.start(t); osc.stop(t + 0.55);
+  } catch {}
+}
+
+// ---------- main timeline ----------
+(async () => {
+  await loadWords();
+  ensureAudio();
+  let n = 10;
+  countEl.textContent = n;
+  const timer = setInterval(() => {
+    n--;
+    if (n <= 0) {
+      clearInterval(timer);
+      countEl.textContent = '0';
+      setTimeout(() => {
+        countEl.remove();
+        boxPhase(() => {
+          impact();
+          for (let i = 0; i < 70; i++) spawnOne();
+          requestAnimationFrame(frame);
+          // accelerating but CAPPED generator — never exceeds MAX particles
+          let batch = 2;
+          setInterval(() => {
+            for (let i = 0; i < Math.floor(batch); i++) spawnOne();
+            if (batch < 9) batch *= 1.1;
+          }, 250);
+        });
+      }, 500);
+    } else countEl.textContent = n;
+  }, 1000);
+})();
+</script>
+</body>
+</html>
