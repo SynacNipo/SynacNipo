@@ -50,10 +50,38 @@
     pointer-events: none; z-index: 50; transition: opacity 0.9s ease;
   }
   #enter.off { opacity: 0; }
+  #hint {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: #000; border: 1px solid #333; color: #ccc;
+    font-size: 13px; padding: 10px 18px; z-index: 60; white-space: nowrap;
+  }
+  #hint b { color: #0ff; }
+  #scare {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: #000;
+  }
+  #face {
+    color: #f00; font-size: 20vw; line-height: 1.15; text-align: center;
+    user-select: none;
+  }
+  body.scare-shake { animation: scareshake 0.12s infinite; }
+  @keyframes scareshake {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-18px, 12px); }
+    50% { transform: translate(14px, -14px); }
+    75% { transform: translate(-10px, -8px); }
+    100% { transform: translate(8px, 10px); }
+  }
 </style>
 </head>
 <body>
 <div id="enter"></div>
+<div id="hint" hidden>psst — press <b>SHIFT+C</b></div>
+<div id="scare" hidden><pre id="face">█▀▀▀▀▀█
+█ ◉  ◉ █
+█ ▄▄▄▄ █
+▀▄▄▄▄▄▀</pre></div>
 <div class="wrap">
   <header>
     <div class="top">synacni.is-a.dev — wip</div>
@@ -121,6 +149,46 @@
       setTimeout(() => enter.remove(), 1000);
     }
   }));
+  // jumpscare bait: hint pops up 3s in, SHIFT+C sets it off (one-shot)
+  setTimeout(() => { document.getElementById('hint').hidden = false; }, 3000);
+  addEventListener('keydown', function scareKey(e) {
+    if (!(e.shiftKey && (e.key === 'C' || e.key === 'c'))) return;
+    removeEventListener('keydown', scareKey);
+    document.getElementById('hint').hidden = true;
+    const scare = document.getElementById('scare');
+    scare.hidden = false;
+    document.body.classList.add('scare-shake');
+    let on = false;
+    const strobe = setInterval(() => { on = !on; scare.style.background = on ? '#a00' : '#000'; }, 90);
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const actx = new AC();
+      const t = actx.currentTime;
+      const dur = 1.1;
+      const buf = actx.createBuffer(1, Math.floor(actx.sampleRate * dur), actx.sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / ch.length, 1.4);
+      const noise = actx.createBufferSource(); noise.buffer = buf;
+      const ng = actx.createGain();
+      ng.gain.setValueAtTime(1.0, t);
+      ng.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      noise.connect(ng); ng.connect(actx.destination);
+      noise.start(t);
+      const osc = actx.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(900, t);
+      osc.frequency.exponentialRampToValueAtTime(60, t + dur);
+      const og = actx.createGain();
+      og.gain.setValueAtTime(0.7, t);
+      og.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(og); og.connect(actx.destination);
+      osc.start(t); osc.stop(t + dur);
+    } catch {}
+    setTimeout(() => {
+      clearInterval(strobe);
+      document.body.classList.remove('scare-shake');
+      scare.hidden = true;
+    }, 1500);
+  });
 </script>
 </body>
 </html>
