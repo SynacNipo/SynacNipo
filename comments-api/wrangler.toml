@@ -5,6 +5,9 @@ compatibility_date = "2026-01-01"
 [vars]
 SITE_URL = "https://synacnipo.github.io/SynacNipo/personal.html"
 ALLOWED_ORIGINS = "https://synacnipo.github.io, http://localhost:8123"
+LOG_REPO = "SynacNipo/SynacNipo"
+LOG_PATH = "things/log.json"
+LOG_BRANCH = "main"
 
 # paste your KV namespace id after running: wrangler kv namespace create KB
 [[kv_namespaces]]

@@ -48,6 +48,14 @@
   button:hover { background: #0ff; color: #000; }
   button:disabled { opacity: 0.4; cursor: default; }
   #c-msg { margin-top: 8px; font-size: 13px; color: #f0f; min-height: 20px; }
+  #log-msg { margin-top: 8px; font-size: 13px; color: #f0f; min-height: 20px; }
+  .reply { color: #999; font-size: 13px; margin-top: 6px; }
+  .reply-form { display: flex; gap: 8px; margin-top: 8px; }
+  .reply-form input { flex: 1; min-width: 0; background: #000; color: #fff; border: 1px solid #333; padding: 6px 10px; font: inherit; font-size: 13px; }
+  .reply-form input:focus { outline: none; border-color: #0ff; }
+  .reply-form button { background: #000; color: #0ff; border: 1px solid #0ff; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .reply-form button:hover { background: #0ff; color: #000; }
+  .mini-link { font-size: 12px; color: #666; }
   #clist .entry { border-top: 1px dashed #222; padding-top: 14px; }
   #auth-row { color: #666; font-size: 13px; margin-bottom: 12px; }
 </style>
@@ -68,6 +76,14 @@
   </div>
   </div>
 
+  <div id="log-add" hidden>
+    <div class="row">
+      <input type="text" id="log-body" placeholder="new entry..." maxlength="1000" />
+      <button id="log-post" type="button">add</button>
+    </div>
+    <p id="log-msg"></p>
+  </div>
+
   <hr />
 
   <div class="k">~/comments</div>
@@ -75,7 +91,7 @@
   <p id="auth-row"><a href="#" id="login-link">login with github</a> <span id="who"></span></p>
   <div id="clist"></div>
   <div class="row">
-    <input type="text" id="c-name" placeholder="name..." maxlength="30" />
+    <input type="text" id="c-name" placeholder="name... (blank = Guest-XXXX)" maxlength="30" />
   </div>
   <div class="row">
     <input type="text" id="c-body" placeholder="say something..." maxlength="500" />
@@ -90,14 +106,21 @@
 <script>
   // entries live in things/log.json (edited via /admin) — newest first.
   // falls back to the baked-in entry above if the fetch fails (e.g. file:// preview).
+  function fmtDate(s) {
+    s = s || '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const t = Date.parse(s);
+    if (isNaN(t)) return s;
+    const d = new Date(t);
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
   fetch('things/log.json').then((r) => r.ok ? r.json() : null).then((d) => {
     if (!d || !d.entries || !d.entries.length) return;
     const wrap = document.getElementById('log');
     wrap.innerHTML = '';
     [...d.entries].reverse().forEach((e) => {
-      let date = e.date || '';
-      const t = Date.parse(date);
-      if (!isNaN(t)) date = new Date(t).toISOString().slice(0, 10);
+      const date = fmtDate(e.date);
       const div = document.createElement('div');
       div.className = 'entry';
       const dt = document.createElement('div');
@@ -133,21 +156,54 @@
           owner = !!d.owner;
           document.getElementById('who').textContent = d.user ? 'logged in as ' + d.user + (owner ? ' (owner)' : '') : '';
           document.getElementById('login-link').style.display = d.user ? 'none' : '';
+          document.getElementById('log-add').hidden = !owner;
         }
       } catch {}
       try {
         const r = await api('/api/comments');
         const d = await r.json();
+        const all = d.comments || [];
+        const tops = all.filter((c) => !c.parent);
         list.innerHTML = '';
-        (d.comments || []).forEach((c) => {
+        tops.forEach((c) => {
           const div = document.createElement('div');
           div.className = 'entry';
           const dt = document.createElement('div');
           dt.className = 'date';
-          dt.textContent = (c.at || '').slice(0, 10) + ' — ' + c.name + (c.owner ? ' (owner)' : '');
+          dt.textContent = fmtDate(c.at) + ' — ' + c.name + (c.owner ? ' (owner)' : '');
           const p = document.createElement('p');
           p.textContent = c.body;
           div.append(dt, p);
+          all.filter((r) => r.parent === c.id).reverse().forEach((r) => {
+            const rp = document.createElement('p');
+            rp.className = 'reply';
+            rp.textContent = '----> ' + r.body + ' (' + r.name + ')';
+            div.append(rp);
+          });
+          const rrow = document.createElement('div');
+          const rlink = document.createElement('a');
+          rlink.href = '#';
+          rlink.className = 'mini-link';
+          rlink.textContent = 'reply';
+          const rform = document.createElement('div');
+          rform.className = 'reply-form';
+          rform.hidden = true;
+          const rinput = document.createElement('input');
+          rinput.type = 'text';
+          rinput.placeholder = 'reply...';
+          rinput.maxLength = 500;
+          const rbtn = document.createElement('button');
+          rbtn.type = 'button';
+          rbtn.textContent = 'post';
+          rbtn.addEventListener('click', async () => {
+            const rr = await api('/api/comments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('c-name').value.trim(), body: rinput.value.trim(), parent: c.id }) });
+            const dd = await rr.json().catch(() => ({}));
+            if (rr.ok) { load(); } else { msg.textContent = dd.error || 'failed.'; }
+          });
+          rform.append(rinput, rbtn);
+          rlink.addEventListener('click', (e) => { e.preventDefault(); rform.hidden = !rform.hidden; if (!rform.hidden) rinput.focus(); });
+          rrow.append(rlink);
+          div.append(rrow, rform);
           if (owner) {
             const del = document.createElement('a');
             del.href = '#';
@@ -181,6 +237,13 @@
       } else {
         msg.textContent = d.error || 'failed.';
       }
+    });
+    document.getElementById('log-post').addEventListener('click', async () => {
+      const inp = document.getElementById('log-body');
+      const r = await api('/api/log', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ body: inp.value.trim() }) });
+      const d = await r.json().catch(() => ({}));
+      document.getElementById('log-msg').textContent = r.ok ? 'added.' : (d.error || 'failed.');
+      if (r.ok) setTimeout(() => location.reload(), 600);
     });
     load();
   })();
