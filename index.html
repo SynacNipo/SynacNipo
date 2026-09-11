@@ -73,6 +73,11 @@
     color: #888; font: inherit; font-size: 13px; padding: 8px 16px; cursor: pointer;
   }
   #skip:hover { color: #0ff; border-color: #0ff; }
+  #rights {
+    position: fixed; left: 16px; bottom: 16px; z-index: 40;
+    color: #555; font-size: 12px; letter-spacing: 1px;
+    pointer-events: none; user-select: none;
+  }
   #dash {
     position: fixed; inset: 0; z-index: 20; opacity: 0; display: none;
     transition: opacity 1.2s; pointer-events: none;
@@ -111,6 +116,7 @@
 <div id="sorry">sorry about that — you're forgiven. dashboard incoming.</div>
 <div id="topbar">forgiven in <span id="topnum">20</span>s</div>
 <button id="skip" type="button">skip →</button>
+<div id="rights">© 2026 SynacNipo. All Rights Reserved.</div>
 <div id="dash"></div>
 <div id="fade"></div>
 
