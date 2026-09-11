@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>synacni</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { background: #000; }
@@ -16,7 +17,18 @@
     padding: 48px 20px 80px;
   }
   ::selection { background: #0ff; color: #000; }
-  .wrap { max-width: 620px; margin: 0 auto; }
+  .wrap { max-width: 620px; margin: 0 auto; position: relative; z-index: 1; }
+  #memes { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+  #memes img {
+    position: absolute; left: 0; top: 0;
+    opacity: 0.22; border-radius: 12px;
+    will-change: transform;
+  }
+  #memes img:nth-child(1) { width: 160px; }
+  #memes img:nth-child(2) { width: 150px; opacity: 0.2; }
+  #memes img:nth-child(3) { width: 240px; opacity: 0.16; }
+  #memes img:nth-child(4) { width: 130px; opacity: 0.2; }
+  #memes img:nth-child(5) { width: 240px; opacity: 0.16; }
   header { margin-bottom: 32px; }
   header .top { color: #666; font-size: 13px; margin-bottom: 12px; }
   h1 { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
@@ -43,6 +55,23 @@
   details summary { cursor: pointer; color: #888; font-size: 13px; }
   details summary:hover { color: #0ff; }
   details ul { margin-left: 16px; }
+  #projects .repo { position: relative; }
+  #projects .repo-card {
+    display: none; position: absolute; left: 0; top: 1.8em; margin-top: 8px;
+    width: 320px; max-width: 82vw; background: #0a0a0a; border: 1px solid #0ff;
+    border-radius: 10px; padding: 12px 14px; z-index: 20;
+    box-shadow: 0 8px 30px rgba(0,255,255,0.22); font-size: 13px; line-height: 1.5;
+    pointer-events: none; white-space: normal;
+  }
+  #projects .repo:hover > .repo-card, #projects .repo:focus-within > .repo-card { display: none; }
+  #projects .repo > a:hover + .repo-card, #projects .repo > a:focus + .repo-card { display: block; }
+  #projects .repo-card .rc-head { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+  #projects .repo-card img { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #333; }
+  #projects .repo-card .rc-name { color: #fff; font-weight: bold; word-break: break-all; }
+  #projects .repo-card .rc-desc { color: #ccc; margin: 4px 0 8px; }
+  #projects .repo-card .rc-meta { color: #666; font-size: 12px; }
+  #projects .repo-card .rc-meta span { margin-right: 12px; }
+  #projects .repo-card .rc-link { color: #0ff; font-size: 12px; }
   footer { margin-top: 16px; color: #666; font-size: 13px; }
   footer a { color: #888; }
   #enter {
@@ -54,9 +83,16 @@
 </head>
 <body>
 <div id="enter"></div>
+<div id="memes" aria-hidden="true">
+  <img src="things/meme.png" alt="" />
+  <img src="things/thisguy.png" alt="" />
+  <img src="things/cinematic.png" alt="" />
+  <img src="things/GreenOrLie.png" alt="" />
+  <img src="things/anothercinematic.png" alt="" />
+</div>
 <div class="wrap">
   <header>
-    <div class="top">synacni.is-a.dev — wip</div>
+    <div class="top">synacni portfoilo</div>
     <h1>synacni</h1>
     <p class="sub">Personal dev site for messing with index.html, sharing thoughts / media, and linking projects for friends.</p>
     <nav><a href="#about">about</a> / <a href="#projects">projects</a> / <a href="personal.html">personal</a> / <a href="fun.html">fun</a> / <a href="#contact">contact</a> / <a href="index.html">replay intro</a></nav>
@@ -76,19 +112,19 @@
     <div class="k">~/projects</div>
     <h2>Projects</h2>
     <ul>
-      <li><a href="https://github.com/SynacNipo/Sacram">Sacram</a> — spare Android phone as WiFi Direct hotspot + proxy (SOCKS5 / HTTP), PdaNet replacement</li>
-      <li><a href="https://github.com/HugoCirca">HugoCirca</a> — org for short-lived projects
+      <li class="repo" data-repo="SynacNipo/Sacram"><a href="https://github.com/SynacNipo/Sacram">Sacram</a><div class="repo-card">loading…</div> — spare Android phone as WiFi Direct hotspot + proxy (SOCKS5 / HTTP), PdaNet replacement</li>
+      <li class="repo" data-repo="SynacNipo/Remove-Tell-Raw"><a href="https://github.com/SynacNipo/Remove-Tell-Raw">Remove-Tell-Raw</a><div class="repo-card">loading…</div> — A plugin for removing the ad on some hosting providers (not all I believe)</li>
+      <li class="repo" data-org="HugoCirca"><a href="https://github.com/HugoCirca">HugoCirca</a><div class="repo-card">loading…</div> — org for short-lived projects
         <details>
           <summary>projects inside</summary>
           <ul>
-            <li><a href="https://github.com/HugoCirca/Offdis-VM">Offdis-VM</a> — YouTube live chat controls VirtualBox VMs</li>
-            <li><a href="https://github.com/HugoCirca/command-line-mcp">command-line-mcp</a> — command-line access for Claude on your machine</li>
-            <li><a href="https://github.com/HugoCirca/Knapsack">Knapsack</a> — Minecraft plugin (Java)</li>
-            <li><a href="https://github.com/HugoCirca/tailscale">tailscale</a> — Tailscale android CLI build for Termux</li>
+            <li class="repo" data-repo="HugoCirca/Offdis-VM"><a href="https://github.com/HugoCirca/Offdis-VM">Offdis-VM</a><div class="repo-card">loading…</div> — YouTube live chat controls VirtualBox VMs</li>
+            <li class="repo" data-repo="HugoCirca/command-line-mcp"><a href="https://github.com/HugoCirca/command-line-mcp">command-line-mcp</a><div class="repo-card">loading…</div> — command-line access for Claude on your machine</li>
+            <li class="repo" data-repo="HugoCirca/Knapsack"><a href="https://github.com/HugoCirca/Knapsack">Knapsack</a><div class="repo-card">loading…</div> — Minecraft plugin (Java)</li>
+            <li class="repo" data-repo="HugoCirca/tailscale"><a href="https://github.com/HugoCirca/tailscale">tailscale</a><div class="repo-card">loading…</div> — Tailscale android CLI build for Termux</li>
           </ul>
         </details>
       </li>
-      <li><a href="https://github.com/HugoCirca/Offdis-VM">Offdis-VM</a> — Node.js console driving VirtualBox through YouTube live chat</li>
     </ul>
   </section>
 
@@ -96,7 +132,8 @@
 
   <section id="contact">
     <div class="k">~/contact</div>
-    <h2>Contact</h2>
+    <h2>Contact me if you want plugins or others</h2>
+    <p>Need a plugin or something else? Hit me up.</p>
     <p>discord: synacni<br /><a href="https://discord.com/users/1459512144377679952">discord profile</a> (may take a moment to load)</p>
   </section>
 
@@ -113,6 +150,151 @@
       setTimeout(() => enter.remove(), 1000);
     }
   }));
+
+  // DVD-style floaters, one of each image, with unpredictable drift
+  (() => {
+    const imgs = [...document.querySelectorAll('#memes img')];
+    const items = imgs.map((img) => {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 0.7 + Math.random() * 1.1;
+      return {
+        img,
+        x: Math.random() * (innerWidth - 160),
+        y: Math.random() * (innerHeight - 120),
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        rot: (Math.random() - 0.5) * 20,
+        vr: (Math.random() - 0.5) * 0.6,
+        ph: Math.random() * Math.PI * 2, // wobble phase
+        phSpd: 0.01 + Math.random() * 0.02,
+      };
+    });
+    function size(it) {
+      const w = it.img.offsetWidth || 150;
+      const h = it.img.offsetHeight || 100;
+      return [w, h];
+    }
+    function bounceRandomize(it) {
+      // keep speed in a sane range but change angle a bit — unpredictable, not perfect DVD mirror
+      const jitter = 0.25 + Math.random() * 0.5;
+      it.vx += (Math.random() - 0.5) * jitter;
+      it.vy += (Math.random() - 0.5) * jitter;
+      const s = Math.hypot(it.vx, it.vy) || 1;
+      const target = 0.7 + Math.random() * 1.2;
+      it.vx = (it.vx / s) * target;
+      it.vy = (it.vy / s) * target;
+      it.vr = (Math.random() - 0.5) * 0.8;
+    }
+    function tick() {
+      for (const it of items) {
+        const [w, h] = size(it);
+        it.ph += it.phSpd;
+        // wobble drift on top of base velocity so paths curve unpredictably
+        it.x += it.vx + Math.cos(it.ph) * 0.5;
+        it.y += it.vy + Math.sin(it.ph * 1.3) * 0.5;
+        it.rot += it.vr;
+        if (it.x <= 0) { it.x = 0; it.vx = Math.abs(it.vx); bounceRandomize(it); }
+        else if (it.x + w >= innerWidth) { it.x = innerWidth - w; it.vx = -Math.abs(it.vx); bounceRandomize(it); }
+        if (it.y <= 0) { it.y = 0; it.vy = Math.abs(it.vy); bounceRandomize(it); }
+        else if (it.y + h >= innerHeight) { it.y = innerHeight - h; it.vy = -Math.abs(it.vy); bounceRandomize(it); }
+        // rare spontaneous swerve
+        if (Math.random() < 0.005) bounceRandomize(it);
+        it.img.style.transform = `translate(${it.x}px, ${it.y}px) rotate(${it.rot}deg)`;
+      }
+      requestAnimationFrame(tick);
+    }
+    // wait for images so offsetWidth is real, then start
+    let loaded = 0;
+    let started = false;
+    const start = () => { if (!started) { started = true; tick(); } };
+    imgs.forEach((img) => {
+      if (img.complete) { if (++loaded === imgs.length) start(); }
+      else {
+        img.addEventListener('load', () => { if (++loaded === imgs.length) start(); });
+        img.addEventListener('error', () => { if (++loaded === imgs.length) start(); });
+      }
+    });
+    if (!imgs.length) return;
+    if (loaded === imgs.length) start();
+  })();
+
+  // GitHub hover cards — live data via api.github.com, cached + prefetched
+  (() => {
+    const cache = {};
+    function el(tag, cls, text) {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    }
+    function renderRepoCard(card, d) {
+      card.innerHTML = '';
+      const head = el('div', 'rc-head');
+      const av = document.createElement('img');
+      av.src = d.owner.avatar_url; av.alt = ''; av.loading = 'lazy';
+      const name = el('div', 'rc-name', d.full_name);
+      head.append(av, name);
+      const desc = el('div', 'rc-desc', d.description || 'no description');
+      const meta = el('div', 'rc-meta');
+      meta.append(
+        el('span', '', '★ ' + d.stargazers_count),
+        el('span', '', '⑂ ' + d.forks_count),
+        el('span', '', d.language || '')
+      );
+      const link = el('div', 'rc-link', 'open on github →');
+      card.append(head, desc, meta, link);
+    }
+    function renderOrgCard(card, d) {
+      card.innerHTML = '';
+      const head = el('div', 'rc-head');
+      const av = document.createElement('img');
+      av.src = d.avatar_url; av.alt = ''; av.loading = 'lazy';
+      const name = el('div', 'rc-name', d.login);
+      head.append(av, name);
+      const desc = el('div', 'rc-desc', d.description || d.bio || 'github org');
+      const meta = el('div', 'rc-meta');
+      meta.append(
+        el('span', '', 'repos: ' + d.public_repos),
+        el('span', '', 'followers: ' + d.followers)
+      );
+      const link = el('div', 'rc-link', 'open on github →');
+      card.append(head, desc, meta, link);
+    }
+    async function loadRepo(li) {
+      const slug = li.dataset.repo;
+      const card = li.querySelector(':scope > .repo-card');
+      if (!slug || !card || cache[slug]) {
+        if (cache[slug] && card) renderRepoCard(card, cache[slug]);
+        return;
+      }
+      try {
+        const r = await fetch('https://api.github.com/repos/' + slug);
+        if (!r.ok) throw 0;
+        const d = await r.json();
+        cache[slug] = d;
+        renderRepoCard(card, d);
+      } catch { card.textContent = 'could not load preview.'; }
+    }
+    async function loadOrg(li) {
+      const name = li.dataset.org;
+      const card = li.querySelector(':scope > .repo-card');
+      const key = 'org:' + name;
+      if (!name || !card || cache[key]) {
+        if (cache[key] && card) renderOrgCard(card, cache[key]);
+        return;
+      }
+      try {
+        let r = await fetch('https://api.github.com/orgs/' + name);
+        if (!r.ok) r = await fetch('https://api.github.com/users/' + name);
+        if (!r.ok) throw 0;
+        const d = await r.json();
+        cache[key] = d;
+        renderOrgCard(card, d);
+      } catch { card.textContent = 'could not load preview.'; }
+    }
+    document.querySelectorAll('#projects .repo[data-repo]').forEach(loadRepo);
+    document.querySelectorAll('#projects .repo[data-org]').forEach(loadOrg);
+  })();
 </script>
 </body>
 </html>

@@ -1,25 +1,6 @@
 ## My Work
 I use [opencode](https://www.opencode.ai) for many of my projects. It helps but I usually fine-tune everything myself and make sure I understand what I'm building. I try to avoid low-effort AI-generated content.
 
-<details>
-<summary>Click to reveal additional info</summary>
-
-
-## Support Me
-If you'd like to support my work, I accept crypto donation. No pressure at all
-
-<details>
-<summary> Click to reveal donation addresses</summary>
-
-**Solana (SOL / USDC-SPL) — Solana network only:**
-```
-He6qNwDcJoMRD3prYpaZVq6ZiVeWKkALMGKvFRHgjL1k
-```
-
-</details>
-
-</details>
-
 
 
 ## Contact
